@@ -1,0 +1,7 @@
+{
+    "name": "day_07",
+    "scripts": {
+        "test": "cargo test --workspace",
+        "run": "cargo run"
+    }
+}
