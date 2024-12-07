@@ -10,6 +10,15 @@ pub fn get_calibration_results(input_path: &str) -> u128 {
     .fold(0, |acc, value| acc + value);
 }
 
+pub fn get_calibration_results_with_concatenation(input_path: &str) -> u128 {
+    let equations = extract_equations(input_path);
+
+    return equations.iter()
+    .filter(|equation| equation.is_possible_with_concatenation())
+    .map(|equation| equation.result)
+    .fold(0, |acc, value| acc + value);
+}
+
 fn extract_equations(input_path: &str) -> Vec<Equation> {
     read_to_string(input_path)
     .unwrap()
@@ -35,10 +44,14 @@ impl Equation {
     }
 
     fn is_possible(&self) -> bool {
-        self.count_solutions() > 0
+        self.count_solutions(false) > 0
     }
 
-    fn count_solutions(&self) -> usize {
+    fn is_possible_with_concatenation(&self) -> bool {
+        self.count_solutions(true) > 0
+    }
+
+    fn count_solutions(&self, concatenation_operator: bool) -> usize {
 
         if self.numbers.len() == 0 {
             return 0;
@@ -61,8 +74,12 @@ impl Equation {
             let previous_values = possibilities.get(&(i - 1)).unwrap();
             let mut next_values = Vec::new();
             for existing_value in previous_values {
-                next_values.push(existing_value + self.numbers.get(i).unwrap());
-                next_values.push(existing_value * self.numbers.get(i).unwrap());
+                let current_number = self.numbers.get(i).unwrap();
+                next_values.push(existing_value + current_number);
+                next_values.push(existing_value * current_number);
+                if concatenation_operator {
+                    next_values.push(format!("{}{}", existing_value, current_number).parse().unwrap());
+                }
             }
             possibilities.insert(i, next_values);
         }
@@ -79,12 +96,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn should_count_solution_1_when_can_concatenate_inside_other_operations() {
+        let equation = Equation {
+            result: 7290,
+            numbers: vec![6, 8, 6, 15]
+        };
+        assert_eq!(equation.count_solutions(true), 1)
+    }
+
+    #[test]
+    fn should_count_solution_1_when_can_concatenate() {
+        let equation = Equation {
+            result: 156,
+            numbers: vec![15, 6]
+        };
+        assert_eq!(equation.count_solutions(true), 1)
+    }
+
+    #[test]
     fn should_count_solution_2_when_can_add_or_multiply_multiple_numbers() {
         let equation = Equation {
             result: 3267,
             numbers: vec![81, 40, 27]
         };
-        assert_eq!(equation.count_solutions(), 2)
+        assert_eq!(equation.count_solutions(false), 2)
     }
 
     #[test]
@@ -93,7 +128,7 @@ mod tests {
             result: 2,
             numbers: vec![0, 1, 0, 1]
         };
-        assert_eq!(equation.count_solutions(), 1)
+        assert_eq!(equation.count_solutions(false), 1)
     }
 
     #[test]
@@ -102,7 +137,7 @@ mod tests {
             result: 0,
             numbers: vec![0, 0]
         };
-        assert_eq!(equation.count_solutions(), 2)
+        assert_eq!(equation.count_solutions(false), 2)
     }
 
     #[test]
@@ -111,7 +146,7 @@ mod tests {
             result: 2,
             numbers: vec![2, 1]
         };
-        assert_eq!(equation.count_solutions(), 1)
+        assert_eq!(equation.count_solutions(false), 1)
     }
 
     #[test]
@@ -120,7 +155,7 @@ mod tests {
             result: 2,
             numbers: vec![1, 1]
         };
-        assert_eq!(equation.count_solutions(), 1)
+        assert_eq!(equation.count_solutions(false), 1)
     }
 
     #[test]
@@ -129,7 +164,7 @@ mod tests {
             result: 2,
             numbers: vec![2]
         };
-        assert_eq!(equation.count_solutions(), 1)
+        assert_eq!(equation.count_solutions(false), 1)
     }
 
     #[test]
@@ -138,7 +173,7 @@ mod tests {
             result: 190,
             numbers: Vec::new()
         };
-        assert_eq!(equation.count_solutions(), 0)
+        assert_eq!(equation.count_solutions(false), 0)
     }
 
     #[test]
@@ -147,7 +182,7 @@ mod tests {
             result: 0,
             numbers: vec![10, 19]
         };
-        assert_eq!(equation.count_solutions(), 0)
+        assert_eq!(equation.count_solutions(false), 0)
     }
 
     #[test]
